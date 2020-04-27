@@ -1,0 +1,117 @@
+/*
+  Event
+
+  This class serves as a "callback" manager to register events
+  to happen on certain triggers or after certain intervals.
+ */
+#include "HomieEventManager.hpp"
+
+/**
+ * Constructs a new EventManager and
+ * figures out the size of the available
+ * array slots.
+ */
+HomieEventManager::HomieEventManager()
+{
+  _intervalSize = sizeof(_interval) / sizeof(TimedTask);
+  _subSize = sizeof(_sub) / sizeof(Subscriber);
+}
+
+/**
+ * Subscribes a new Subscriber to the
+ * event manager.
+ */
+void HomieEventManager::subscribe(Subscriber sub)
+{
+  if (_subSize >= _subPos)
+  {
+    _sub[_subPos] = sub;
+    _subPos++;
+  }
+}
+
+/**
+ * Triggers a specified event which will find the applicable
+ * Subscriber and execute it's EventTask
+ */
+boolean HomieEventManager::trigger(HomieNodeEvent* evt)
+{
+  for (int i = 0; i < _subSize; i++)
+  {
+    Subscriber *sub = &_sub[i];
+
+    if ((String) sub->label == (String) evt->label)
+    {
+      // Execute event
+      boolean result = sub->task->execute(evt);
+      if(result == false)
+      { delete evt;}
+      return result;
+    }
+  }
+  return false;
+}
+
+/**
+ * Setup a timed trigger that will execute an
+ * event after a couple of milliseconds.
+ */
+void HomieEventManager::triggerInterval(TimedTask task)
+{
+  for (int i = 0; i < _intervalSize; i++)
+  {
+    //insert task in first free slot
+    if(!_interval[i].alive)
+    {
+      _interval[i] = task;
+      break;
+    }
+  }
+}
+
+/**
+ * Setup a timed trigger that will execute an
+ * event after a couple of milliseconds.
+ */
+void HomieEventManager::disableTimedTask(const char * label)
+{
+  for (int i = 0; i < _intervalSize; i++)
+  {
+    //insert task in first free slot
+    if(_interval[i].alive && _interval[i].evt != NULL
+           && 0 == strcmp(_interval[i].evt->label,label))
+    {
+      _interval[i].alive = false;
+      delete _interval[i].evt;
+      break;
+    }
+  }
+}
+
+/**
+ * Tick the EventManager to evaluate any
+ * timed instances for the manager.
+ */
+void HomieEventManager::tick()
+{
+  unsigned long currentMs = millis();
+  unsigned long difference = currentMs - _previousMs;
+
+  for (int i = 0; i < _intervalSize; i++)
+  {
+    TimedTask *task = &_interval[i];
+
+    if (task->alive)
+    {
+      task->current = task->current + difference;
+      if (task->eval())
+      {
+        // Run the timed event when it evalutes to
+        // ready. If return true, we want event to be cyclic
+        task->alive = trigger(task->evt);
+      }
+    }
+  }
+
+  _previousMs = currentMs;
+}

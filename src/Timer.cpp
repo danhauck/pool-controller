@@ -7,7 +7,7 @@ tm getCurrentDateTime() {
 
   TimeChangeRule *tcr = NULL;
   time_t     t        = getTimeFor(0, &tcr);
-  struct tm timeinfo =  *localtime(&t);
+  struct tm timeinfo  = *localtime(&t);
 
   return timeinfo;
 }
@@ -28,6 +28,23 @@ tm getEndTime(TimerSetting timerSetting) {
   endTime.tm_sec  = 0;
 
   return endTime;
+}
+
+bool isInTimeRange(tm currentTime, TimerSetting timerSetting) {
+  bool retval;
+
+  time_t cTime   = mktime(&currentTime);
+  time_t startTm = mktime(&getStartTime(timerSetting));
+  time_t endTm   = mktime(&getEndTime(timerSetting));
+
+  if (difftime(cTime, startTm) >= 0 && difftime(cTime, endTm) <= 0) {
+    retval = true;
+
+  } else {
+    retval = false;
+  }
+
+  return retval;
 }
 
 

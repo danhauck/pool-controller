@@ -12,3 +12,5 @@ struct TimerSetting {
 tm getCurrentDateTime();
 tm getStartTime(TimerSetting ts);
 tm getEndTime(TimerSetting ts);
+
+bool isInTimeRange(tm currentTime, TimerSetting timerSetting);

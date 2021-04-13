@@ -22,8 +22,8 @@ void RuleBoost::loop() {
       _solarRelay->setSwitch(true);
 
     } else if ((_solarRelay->getSwitch())
-      && (getPoolTemperature() > (getPoolMaxTemperature() + getTemperaturHysteresis()))
-      && (getPoolTemperature() > (getSolarTemperature() + getTemperaturHysteresis()))) {
+      &&   (    (getPoolTemperature() > (getPoolMaxTemperature() + getTemperaturHysteresis()))
+             || (getPoolTemperature() > (getSolarTemperature() + getTemperaturHysteresis())))) {
       Homie.getLogger() << cIndent << F("§ RuleBoost: Max. Temperature reached. Switch solar off") << endl;
       _solarRelay->setSwitch(false);
 
